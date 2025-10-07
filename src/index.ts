@@ -160,6 +160,14 @@ export function apply(ctx: Context, config: Config) {
       const allowText = useFilter(config.features.text)(session)
       const allowImage = useFilter(config.features.image)(session)
 
+      // 增加对LORA标签的支持
+      // 为 input 替换 换行符 为 " "
+      input = input.replace(/\n/g, " ");
+      // 为 input 替换 "&lt;" 为 "《"  , "&gt;" 为 "》"
+      input = input.replace(/&lt;/g, "《").replace(/&gt;/g, "》");
+      // 为LROA提示词启用替换，将"<lora>"替换为"《lora》,不影响正常诸如 <img> 等html标签的替换"
+      input = input.replace(/<lora:([^>]+)>/g, "《lora:$1》");
+
       let imgUrl: string, image: ImageData
       if (!restricted(session) && haveInput) {
         input = h('', h.transform(h.parse(input), {
