@@ -5,6 +5,7 @@
   "main": "src/index.ts",
   "typings": "lib/index.d.ts",
   "files": [
+    "src",
     "lib",
     "dist",
     "data"

@@ -287,7 +287,17 @@ export function apply(ctx: Context, config: Config) {
       if (options.hiresFix || config.hiresFix) {
         // set default denoising strength to `0.75` for `hires fix` feature
         // https://github.com/koishijs/novelai-bot/issues/158
-        parameters.strength ??= session.resolve(config.strength)
+        //parameters.strength ??= session.resolve(config.strength)
+
+        // 高清参数部分
+        parameters.strength ??= session.resolve(config.strength);
+        parameters.hr_additional_modules = [];
+        parameters.hr_scale = session.resolve(config.hrScale);
+        //parameters.hr_sampler = "UniPC";
+        //parameters.hr_scheduler = "Use same scheduler";
+        parameters.hr_cfg = session.resolve(config.hrCfg);
+        parameters.hr_second_pass_steps = session.resolve(config.hrSteps);
+        
       }
 
       const getRandomId = () => Math.random().toString(36).slice(2)
@@ -406,18 +416,23 @@ export function apply(ctx: Context, config: Config) {
               init_images: image && [image.dataUrl], // sd-webui accepts data URLs with base64 encoded image
               restore_faces: config.restoreFaces ?? false,
               enable_hr: options.hiresFix ?? config.hiresFix ?? false,
-              hr_second_pass_steps: options.hiresFixSteps ?? 0,
-              hr_upscaler: config.hiresFixUpscaler ?? 'None',
+              hr_upscaler: config.hiresFixUpscaler ?? "None",
               ...project(parameters, {
-                prompt: 'prompt',
-                batch_size: 'n_samples',
-                seed: 'seed',
-                negative_prompt: 'uc',
-                cfg_scale: 'scale',
-                steps: 'steps',
-                width: 'width',
-                height: 'height',
-                denoising_strength: 'strength',
+                hr_additional_modules: "hr_additional_modules", // Forge-ui对高清修复的支持
+                hr_scale: "hr_scale",
+                //hr_sampler: "hr_sampler",
+                //hr_scheduler: "hr_scheduler",
+                hr_cfg: "hr_cfg",
+                hr_second_pass_steps: "hr_second_pass_steps",
+                prompt: "prompt",
+                batch_size: "n_samples",
+                seed: "seed",
+                negative_prompt: "uc",
+                cfg_scale: "scale",
+                steps: "steps",
+                width: "width",
+                height: "height",
+                denoising_strength: "strength",
               }),
             }
           }
@@ -545,6 +560,14 @@ export function apply(ctx: Context, config: Config) {
           const output = session.resolve(options.output ?? config.output)
           if(output === 'jsonback' || output === 'json'){
             const result = await getPayload();
+            // 对高清修复的宽高进行修正
+            if (options.hiresFix || config.hiresFix) {
+              let hrScale = parameters.hr_scale = session.resolve(config.hrScale);
+              let height = hrScale * parseInt(result.height);
+              let width = hrScale * parseInt(result.width);
+              result.height = height.toString();
+              result.width = width.toString();
+            }
             finalJsonOuput = JSON.stringify(result);
             console.log(finalJsonOuput);
           }

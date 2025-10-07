@@ -160,6 +160,7 @@ export const latentUpscalers = [
   'Latent (nearest-exact)',
 ]
 
+// 增加高清修复扩展选项
 export interface Options {
   enhance: boolean
   model: string
@@ -169,6 +170,9 @@ export interface Options {
   steps: number
   scale: number
   noise: number
+  hrCfg: number
+  hrScale: number
+  hrSteps: number
   strength: number
 }
 
@@ -221,6 +225,7 @@ const features = Schema.object({
   image: Schema.computed(Schema.boolean(), options).default(true).description('是否启用图片转图片。'),
 })
 
+// 增加高清修复扩展选项
 interface ParamConfig {
   model?: Model
   sampler?: string
@@ -237,10 +242,13 @@ interface ParamConfig {
   textSteps?: Computed<number>
   imageSteps?: Computed<number>
   maxSteps?: Computed<number>
-  strength?: Computed<number>
   noise?: Computed<number>
   resolution?: Computed<Orient | Size>
   maxResolution?: Computed<number>
+  hrCfg?: Computed<number>
+  hrScale?: Computed<number>
+  hrSteps?: Computed<number>
+  strength?: Computed<number>
 }
 
 export interface Config extends PromptConfig, ParamConfig {
@@ -371,6 +379,11 @@ export const Config = Schema.intersect([
       restoreFaces: Schema.boolean().description('是否启用人脸修复。').default(false),
       hiresFix: Schema.boolean().description('是否启用高分辨率修复。').default(false),
       hiresFixUpscaler: Schema.union(latentUpscalers.concat(upscalers)).description('高分辨率修复的放大算法。').default('Latent'),
+      // 增加对高清放大参数的预设支持
+      hrScale: Schema.computed(Schema.number(), options).min(0).max(4).description('默认的高清放大倍率。').default(1.5),
+      hrCfg: Schema.computed(Schema.number(), options).min(0).max(30).description('默认的高清对输入服从度。').default(7),
+      hrSteps: Schema.computed(Schema.number(), options).min(0).max(150).description('默认的高清迭代步数。').default(15),
+      strength: Schema.computed(Schema.number(), options).min(0).max(1).description('默认的高清重绘强度。').default(0.7),
       scheduler: Schema.union(scheduler.sd).description('默认的调度器。').default('Automatic'),
     }),
     Schema.object({
