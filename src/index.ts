@@ -99,7 +99,7 @@ export function apply(ctx: Context, config: Config) {
     .option('enhance', '-e', { hidden: some(restricted, thirdParty, noImage) })
     .option('model', '-m <model>', { type: models, hidden: thirdParty })
     .option('resolution', '-r <resolution>', { type: resolution })
-    .option('output', '-o', { type: ['minimal', 'default', 'verbose'] })
+    .option('output', '-o', { type: ['minimal', 'default', 'verbose', 'json', 'jsonback'] })
     .option('override', '-O', { hidden: restricted })
     .option('sampler', '-s <sampler>')
     .option('seed', '-x <seed:number>')
@@ -326,6 +326,9 @@ export function apply(ctx: Context, config: Config) {
         }
       })()
 
+      // getPayload的JSON存储
+      let finalJsonOuput = null;
+
       const getPayload = async () => {
         switch (config.type) {
           case 'login':
@@ -537,6 +540,15 @@ export function apply(ctx: Context, config: Config) {
       let finalPrompt = prompt
       const iterate = async () => {
         const request = async () => {
+
+          // 打印JSON输出
+          const output = session.resolve(options.output ?? config.output)
+          if(output === 'jsonback' || output === 'json'){
+            const result = await getPayload();
+            finalJsonOuput = JSON.stringify(result);
+            console.log(finalJsonOuput);
+          }
+
           const res = await ctx.http(trimSlash(config.endpoint) + path, {
             method: 'POST',
             timeout: config.requestTimeout,
@@ -644,11 +656,17 @@ export function apply(ctx: Context, config: Config) {
         function getContent() {
           const output = session.resolve(options.output ?? config.output)
           if (output === 'minimal') return h.image(dataUrl)
+          if (output === 'jsonback') return h.image(dataUrl)
           const attrs = {
             userId: session.userId,
             nickname: session.author?.nickname || session.username,
           }
           const result = h('figure')
+          if (output === 'json'){
+            result.children.push(h('message', attrs, JSON.stringify(finalJsonOuput)))
+            result.children.push(h('message', attrs, h.image(dataUrl)))
+            return result
+          }
           const lines = [`seed = ${parameters.seed}`]
           if (output === 'verbose') {
             if (!thirdParty()) {

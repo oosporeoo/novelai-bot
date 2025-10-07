@@ -449,6 +449,8 @@ export const Config = Schema.intersect([
       Schema.const('minimal').description('只发送图片'),
       Schema.const('default').description('发送图片和关键信息'),
       Schema.const('verbose').description('发送全部信息'),
+      Schema.const('json').description('前台发送JSON信息'),
+      Schema.const('jsonback').description('后台发送JSON信息'),
     ]).description('输出方式。').default('default'),
     maxIterations: Schema.natural().description('允许的最大绘制次数。').default(1),
     maxRetryCount: Schema.natural().description('连接失败时最大的重试次数。').default(3),
