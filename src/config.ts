@@ -29,6 +29,11 @@ const ucPreset = [
   'chromatic aberration, signature, extra digits, artistic error, username, scan, [abstract]',
 ].join(', ')
 
+const forbiddenPreset = [
+  //违禁词列表
+  'NSFW,absent,ahegao,ahoge,akane,anal,anus,anus,apart,areola,ass,asshole,back,ball,bare,beads,behind,bent,between,binds,blindfold,bloat,bodily fluids,bondage,boob,boobs,bosom,bound,bra,breast,briefs,buff,bukkake,bulge,butt,cage,chains,chastity,chest,clamp,cleavage,climax,clitoris,cock,collar,cream,crotch,cuffs,cum,cumshot,deepthroat,defecation,devoid,diaphanous,dildo,discipline,distension,domin,down,ecchi,egg,ejac,ejacula,ejaculation,engorgement,enlargement,erection,erotic,excrement,excrement,excretion,exhibi,expansion,expose,exposed,faeces,fanservice,fart,feces,fetish,fetters,flatulence,flirt,flogger,fluid,fluids,foreskin,fours,fuck,fundoshi,gag,genitalia,gokkun,gossamer,groin,groping,guillotine,handjob,hardwork,harem,harness,hindquarters,hole,humiliation,incest,incontinence,inflation,intimate,lack,lacta,latex,leather,less,lewd,lick,lift,lingerie,liquid,manhood,master,masturbating,masturbation,mating,mature,member,metamorphosis,milk,minus,missing,moobs,naked,nipple,nkd,nsfw,nude,open,orgasmic,panties,pectoral,pee,penetration,penile,penis,phallic,piss,poop,position,pr0n,present,press,private,privates,protrusion,pubic,push-up,pussy,r18,raw,remove,renr,restraints,risque,roll,rubber,saliva,sans,see-through,see-thru,semen,sensual,sex,shackles,shaft,shake,sheer,shibari,shirtless,shit,skimpy,slave,sm,snot,spanking,speedo,spread,stomach,strap-on,stripped,submission,submissive,suffer,suggestive,swell,tent,tentacle,testicle,testicles,thong,tit,tits,toilet,topless,trans,transparent,truss,tumescence,underbelly,underclothes,underwear,undress,urine,vagina,vibrator,vomit,vulva,whip,without,yaoi,yuri'
+].join(', ')
+
 type Model = keyof typeof modelMap
 type Orient = keyof typeof orientMap
 
@@ -192,7 +197,7 @@ export interface PromptConfig {
 export const PromptConfig: Schema<PromptConfig> = Schema.object({
   basePrompt: Schema.computed(Schema.string().role('textarea'), options).description('默认附加的标签。').default('best quality, amazing quality, very aesthetic, absurdres'),
   negativePrompt: Schema.computed(Schema.string().role('textarea'), options).description('默认附加的反向标签。').default(ucPreset),
-  forbidden: Schema.computed(Schema.string().role('textarea'), options).description('违禁词列表。请求中的违禁词将会被自动删除。').default(''),
+  forbidden: Schema.computed(Schema.string().role('textarea'), options).description('违禁词列表。请求中的违禁词将会被自动删除。').default(forbiddenPreset),
   defaultPromptSw: Schema.boolean().description('是否启用默认标签。').default(false),
   defaultPrompt: Schema.string().role('textarea', options).description('默认标签，可以在用户无输入prompt时调用。可选在sd-webui中安装dynamic prompt插件，配合使用以达到随机标签效果。').default(''),
   placement: Schema.computed(Schema.union([
@@ -441,7 +446,6 @@ export const Config = Schema.intersect([
     textSteps: Schema.computed(Schema.natural(), options).description('文本生图时默认的迭代步数。').default(28),
     imageSteps: Schema.computed(Schema.natural(), options).description('以图生图时默认的迭代步数。').default(50),
     maxSteps: Schema.computed(Schema.natural(), options).description('允许的最大迭代步数。').default(64),
-    strength: Schema.computed(Schema.number(), options).min(0).max(1).description('默认的重绘强度。').default(0.7),
     noise: Schema.computed(Schema.number(), options).min(0).max(1).description('默认的重绘添加噪声强度。').default(0.2),
     resolution: Schema.computed(Schema.union([
       Schema.const('portrait').description('肖像 (832x2326)'),
@@ -463,7 +467,7 @@ export const Config = Schema.intersect([
       Schema.const('default').description('发送图片和关键信息'),
       Schema.const('verbose').description('发送全部信息'),
       Schema.const('json').description('前台发送JSON信息'),
-      Schema.const('jsonback').description('后台发送JSON信息'),
+      Schema.const('debug').description('只发送图片，日志发送调试信息'),
     ]).description('输出方式。').default('default'),
     maxIterations: Schema.natural().description('允许的最大绘制次数。').default(1),
     maxRetryCount: Schema.natural().description('连接失败时最大的重试次数。').default(3),

@@ -99,7 +99,7 @@ export function apply(ctx: Context, config: Config) {
     .option('enhance', '-e', { hidden: some(restricted, thirdParty, noImage) })
     .option('model', '-m <model>', { type: models, hidden: thirdParty })
     .option('resolution', '-r <resolution>', { type: resolution })
-    .option('output', '-o', { type: ['minimal', 'default', 'verbose', 'json', 'jsonback'] })
+    .option('output', '-o', { type: ['minimal', 'default', 'verbose', 'json', 'debug'] })
     .option('override', '-O', { hidden: restricted })
     .option('sampler', '-s <sampler>')
     .option('seed', '-x <seed:number>')
@@ -556,9 +556,9 @@ export function apply(ctx: Context, config: Config) {
       const iterate = async () => {
         const request = async () => {
 
-          // 打印JSON输出
+          // 整理JSON输出
           const output = session.resolve(options.output ?? config.output)
-          if(output === 'jsonback' || output === 'json'){
+          if(output === 'debug' || output === 'json'){
             const result = await getPayload();
             // 对高清修复的宽高进行修正
             if (options.hiresFix || config.hiresFix) {
@@ -569,7 +569,6 @@ export function apply(ctx: Context, config: Config) {
               result.width = width.toString();
             }
             finalJsonOuput = JSON.stringify(result);
-            console.log(finalJsonOuput);
           }
 
           const res = await ctx.http(trimSlash(config.endpoint) + path, {
@@ -679,7 +678,6 @@ export function apply(ctx: Context, config: Config) {
         function getContent() {
           const output = session.resolve(options.output ?? config.output)
           if (output === 'minimal') return h.image(dataUrl)
-          if (output === 'jsonback') return h.image(dataUrl)
           const attrs = {
             userId: session.userId,
             nickname: session.author?.nickname || session.username,
@@ -689,6 +687,10 @@ export function apply(ctx: Context, config: Config) {
             result.children.push(h('message', attrs, JSON.stringify(finalJsonOuput)))
             result.children.push(h('message', attrs, h.image(dataUrl)))
             return result
+          }
+          if (output === 'debug'){
+            ctx.logger.warn('UserInfo: '+ attrs.userId + '/' + attrs.nickname + ' JsonOutput: ' + finalJsonOuput)
+            return h.image(dataUrl)
           }
           const lines = [`seed = ${parameters.seed}`]
           if (output === 'verbose') {
