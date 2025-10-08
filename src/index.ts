@@ -567,6 +567,10 @@ export function apply(ctx: Context, config: Config) {
               result.height = height.toString();
               result.width = width.toString();
             }
+            if (result.init_images !== undefined){
+              // 避免调试输出时显示过长的图片Base64字符串
+              result.init_images = "[base64 image data omitted]";
+            }
             finalJsonOuput = JSON.stringify(result);
           }
 
@@ -676,10 +680,28 @@ export function apply(ctx: Context, config: Config) {
 
         function getContent() {
           const output = session.resolve(options.output ?? config.output)
-          if (output === 'minimal') return h.image(dataUrl)
           const attrs = {
             userId: session.userId,
             nickname: session.author?.nickname || session.username,
+          }
+
+          let loggerResult = "UserId: "+ attrs.userId + '\nUserNickname: ' + attrs.nickname + '\n'
+          let optionsResult = "";
+          if (output === 'minimal') return h.image(dataUrl)
+
+          if (options.override){
+            loggerResult += "Prompt Override (-O) Active! \n"
+            optionsResult += "-O "
+          }
+
+          if (options.ignoreForbidden){
+            loggerResult += "IgonreForbidden (-F) Active! \n"
+            optionsResult += "-F "
+          }
+
+          if (options.hiresFix){
+            loggerResult += "Hires Fix (-H) Active! \n"
+            optionsResult += "-H "
           }
           const result = h('figure')
           if (output === 'json'){
@@ -687,19 +709,13 @@ export function apply(ctx: Context, config: Config) {
             result.children.push(h('message', attrs, h.image(dataUrl)))
             return result
           }
+          // 调试输出
           if (output === 'debug'){
-            let loggerResult = null;
-            loggerResult = "UserId: "+ attrs.userId + '\nUserNickname: ' + attrs.nickname + '\n'
-
-            if (options.ignoreForbidden){
-              loggerResult += "igonreForbidden (-F) Active! \n"
-            }
-
             loggerResult += "PayloadJson: "+ finalJsonOuput
             ctx.logger.warn(loggerResult)
             return h.image(dataUrl)
           }
-          const lines = [`seed = ${parameters.seed}`]
+          const lines = []
           if (output === 'verbose') {
             if (!thirdParty()) {
               lines.push(`model = ${model}`)
@@ -716,8 +732,10 @@ export function apply(ctx: Context, config: Config) {
               )
             }
           }
-          result.children.push(h('message', attrs, lines.join('\n')))
-          result.children.push(h('message', attrs, `prompt = ${h.escape(finalPrompt)}`))
+          // result.children.push(h('message', attrs, lines.join('\n')))
+          // 直接返回生成带seed的指令 
+          result.children.push(h("message", attrs,`nai ${optionsResult} -x ${parameters.seed} ${h.escape(finalPrompt)}`));
+          // result.children.push(h('message', attrs, `prompt = ${h.escape(finalPrompt)}`))
           if (output === 'verbose') {
             result.children.push(h('message', attrs, `undesired = ${h.escape(uc)}`))
           }
