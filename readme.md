@@ -7,3 +7,4 @@
 - 修复 Forge Webui 使用高清修复时提示 hr_additional_modules 的错误
 - 扩展了高清修复的其它几个选项`hrCFG(提示词服从度)` `hrScale(高清倍率)` `hrSteps(高清迭代步数)`
 - 增加一组默认的违禁词列表
+- 增加使用 `-F` 来临时禁用违禁词的功能

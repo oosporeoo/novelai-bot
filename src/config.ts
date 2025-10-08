@@ -499,7 +499,7 @@ export function parseForbidden(input: string) {
 
 const backslash = /@@__BACKSLASH__@@/g
 
-export function parseInput(session: Session, input: string, config: Config, override: boolean): string[] {
+export function parseInput(session: Session, input: string, config: Config, override: boolean , ignoreForbidden: boolean): string[] {
   if (!input) {
     return [
       null,
@@ -563,6 +563,10 @@ export function parseInput(session: Session, input: string, config: Config, over
   const positive = input.split(/,\s*/g).filter((word) => {
     // eslint-disable-next-line no-control-regex
     word = word.toLowerCase().replace(/[\x00-\x7f]/g, s => s.replace(/[^0-9a-zA-Z]/, ' ')).replace(/\s+/, ' ').trim()
+    if (ignoreForbidden) {
+      // active -F ignore forbidden words
+      return true;
+    }
     if (!word) return false
     for (const { pattern, strict } of forbidden) {
       if (strict && word.split(/\W+/g).includes(pattern)) {
@@ -574,7 +578,8 @@ export function parseInput(session: Session, input: string, config: Config, over
     return true
   }).map((word) => {
     if (/^<.+>$/.test(word)) return word.replace(/ /g, '_')
-    return word.toLowerCase()
+    // Fix: Turn off the lowercase switch, but the problem is still lowercase
+    return config.lowerCase ? word.toLowerCase() : word;
   })
 
   if (Math.max(getWordCount(positive), getWordCount(negative)) > (session.resolve(config.maxWords) || Infinity)) {

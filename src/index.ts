@@ -101,6 +101,8 @@ export function apply(ctx: Context, config: Config) {
     .option('resolution', '-r <resolution>', { type: resolution })
     .option('output', '-o', { type: ['minimal', 'default', 'verbose', 'json', 'debug'] })
     .option('override', '-O', { hidden: restricted })
+    // -F 可临时跳过违禁词检测，可做特殊用途
+    .option("ignoreForbidden", "-F", { hidden: restricted })
     .option('sampler', '-s <sampler>')
     .option('seed', '-x <seed:number>')
     .option('steps', '-t <step>', { type: step, hidden: restricted })
@@ -160,12 +162,9 @@ export function apply(ctx: Context, config: Config) {
       const allowText = useFilter(config.features.text)(session)
       const allowImage = useFilter(config.features.image)(session)
 
-      // 增加对LORA标签的支持
-      // 为 input 替换 换行符 为 " "
+      // 增加对LORA标签的支持，处理LORA标签 <> 转换为《》，在后续的parseInput中复原
       input = input.replace(/\n/g, " ");
-      // 为 input 替换 "&lt;" 为 "《"  , "&gt;" 为 "》"
       input = input.replace(/&lt;/g, "《").replace(/&gt;/g, "》");
-      // 为LROA提示词启用替换，将"<lora>"替换为"《lora》,不影响正常诸如 <img> 等html标签的替换"
       input = input.replace(/<lora:([^>]+)>/g, "《lora:$1》");
 
       let imgUrl: string, image: ImageData
@@ -211,7 +210,7 @@ export function apply(ctx: Context, config: Config) {
         }
       }
 
-      const [errPath, prompt, uc] = parseInput(session, input, config, options.override)
+      const [errPath, prompt, uc] = parseInput(session, input, config, options.override , options.ignoreForbidden)
       if (errPath) return session.text(errPath)
 
       let token: string
@@ -689,7 +688,15 @@ export function apply(ctx: Context, config: Config) {
             return result
           }
           if (output === 'debug'){
-            ctx.logger.warn('UserInfo: '+ attrs.userId + '/' + attrs.nickname + ' JsonOutput: ' + finalJsonOuput)
+            let loggerResult = null;
+            loggerResult = "UserId: "+ attrs.userId + '\nUserNickname: ' + attrs.nickname + '\n'
+
+            if (options.ignoreForbidden){
+              loggerResult += "igonreForbidden (-F) Active! \n"
+            }
+
+            loggerResult += "PayloadJson: "+ finalJsonOuput
+            ctx.logger.warn(loggerResult)
             return h.image(dataUrl)
           }
           const lines = [`seed = ${parameters.seed}`]
