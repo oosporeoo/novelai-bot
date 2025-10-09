@@ -9,3 +9,5 @@
 - 增加一组默认的违禁词列表
 - 增加使用 `-F` 来临时禁用违禁词的功能
 - 增加使用 `-A` 对ADetailer人脸修复插件的支持
+
+覆盖 Koishi 目录下的 \node_modules\koishi-plugin-novelai\lib 内 index.js 即可食用
