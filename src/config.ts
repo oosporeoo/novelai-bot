@@ -254,6 +254,7 @@ interface ParamConfig {
   hrScale?: Computed<number>
   hrSteps?: Computed<number>
   strength?: Computed<number>
+  adetailer?: string
 }
 
 export interface Config extends PromptConfig, ParamConfig {
@@ -382,6 +383,7 @@ export const Config = Schema.intersect([
       sampler: sampler.createSchema(sampler.sd),
       upscaler: Schema.union(upscalers).description('默认的放大算法。').default('Lanczos'),
       restoreFaces: Schema.boolean().description('是否启用人脸修复。').default(false),
+      adetailer: Schema.string().description('默认ADetailer插件名称').default('face_yolov8m.pt'),
       hiresFix: Schema.boolean().description('是否启用高分辨率修复。').default(false),
       hiresFixUpscaler: Schema.union(latentUpscalers.concat(upscalers)).description('高分辨率修复的放大算法。').default('Latent'),
       // 增加对高清放大参数的预设支持

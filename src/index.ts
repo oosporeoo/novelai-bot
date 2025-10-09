@@ -111,6 +111,8 @@ export function apply(ctx: Context, config: Config) {
     .option('strength', '-N <strength:number>', { hidden: restricted })
     .option('hiresFix', '-H', { hidden: () => config.type !== 'sd-webui' })
     .option('hiresFixSteps', '<step>', { type: step, hidden: () => config.type !== 'sd-webui' })
+    // -A 添加对Adetar Detailer插件支持
+    .option("adetailer", "-A", { hidden: () => config.type !== "sd-webui" })
     .option('smea', '-S', { hidden: () => config.model !== 'nai-v3' })
     .option('smeaDyn', '-d', { hidden: () => config.model !== 'nai-v3' })
     .option('scheduler', '-C <scheduler:string>', {
@@ -299,6 +301,11 @@ export function apply(ctx: Context, config: Config) {
         
       }
 
+      if (options.adetailer) {
+        // 获取ADetailer参数部分
+        parameters.adetailer = session.resolve(config.adetailer);
+      }
+
       const getRandomId = () => Math.random().toString(36).slice(2)
       const container = Array(iterations).fill(0).map(getRandomId)
       if (config.maxConcurrency) {
@@ -409,15 +416,26 @@ export function apply(ctx: Context, config: Config) {
             return { model, input: prompt, action: 'generate', parameters: omit(parameters, ['prompt']) }
           }
           case 'sd-webui': {
-            return {
+            interface SdWebuiPayload {
+              sampler_index: string;
+              scheduler: string;
+              init_images?: string[];
+              restore_faces: boolean;
+              enable_hr: boolean;
+              hr_upscaler: string;
+              alwayson_scripts?: { [key: string]: any }; // 声明可选的 alwayson_scripts 属性
+              [key: string]: any; // 这个索引签名可以接受其他 project() 传入的属性
+            }
+
+            let payload: SdWebuiPayload = {
               sampler_index: sampler.sd[options.sampler],
               scheduler: options.scheduler,
-              init_images: image && [image.dataUrl], // sd-webui accepts data URLs with base64 encoded image
+              init_images: image && [image.dataUrl],
               restore_faces: config.restoreFaces ?? false,
               enable_hr: options.hiresFix ?? config.hiresFix ?? false,
               hr_upscaler: config.hiresFixUpscaler ?? "None",
               ...project(parameters, {
-                hr_additional_modules: "hr_additional_modules", // Forge-ui对高清修复的支持
+                hr_additional_modules: "hr_additional_modules",
                 hr_scale: "hr_scale",
                 //hr_sampler: "hr_sampler",
                 //hr_scheduler: "hr_scheduler",
@@ -433,7 +451,22 @@ export function apply(ctx: Context, config: Config) {
                 height: "height",
                 denoising_strength: "strength",
               }),
+            };
+      
+            const alwayson_scripts: { [key: string]: any } = {};
+            
+            // 添加对Adetailer插件的支持
+            if (options.adetailer) {
+              alwayson_scripts["Adetailer"] = {
+                args: [{ ad_model: session.resolve(config.adetailer) }],
+              };
             }
+            
+            if (Object.keys(alwayson_scripts).length > 0) {
+              payload.alwayson_scripts = alwayson_scripts;
+            }
+      
+            return payload;
           }
           case 'stable-horde': {
             const nsfw = session.resolve(config.nsfw)
