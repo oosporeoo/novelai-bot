@@ -1,4 +1,4 @@
-# [koishi-plugin-novelai](https://bot.novelai.dev)
+## [koishi-plugin-novelai](https://bot.novelai.dev)
 
 ### 增加/修改功能
 
@@ -10,4 +10,6 @@
 - 增加使用 `-F` 来临时禁用违禁词的功能
 - 增加使用 `-A` 对ADetailer人脸修复插件的支持
 
-覆盖 Koishi 目录下的 \node_modules\koishi-plugin-novelai\lib 内 index.js 即可食用
+### 使用方式
+1. 访问 [Releases页面](https://github.com/oosporeoo/novelai-bot/releases/tag/v1.27.0), 下载编译后的 `index.js` 文件
+2. 覆盖 Koishi 目录下的 `\node_modules\koishi-plugin-novelai\lib` 内 `index.js` 使用
